@@ -106,9 +106,9 @@ function renderOverview() {
     <section class="product-page">
       <div class="product-hero">
         <div class="hero-copy">
-          <div class="eyebrow">Agent interviews scored where agents actually work</div>
-          <h2>Measure model work like a real interview loop.</h2>
-          <p>Locked tasks, transcripts, artifacts, tokens, dollars, time, tool calls, skill rubrics, and security checks in one auditable GitHub PR flow.</p>
+          <div class="eyebrow">Prompting skill, measured inside real agent sessions</div>
+          <h2>Measure how well people steer agents through tasks.</h2>
+          <p>Locked challenges capture the human side of agent work: prompt quality, re-prompts, tool choices, artifacts, time, tokens, dollars, and security hygiene.</p>
           <div class="hero-actions">
             <button id="startArena" class="primary">Browse challenges</button>
             <button id="openBoard" class="secondary dark">View leaderboard</button>
@@ -122,18 +122,18 @@ function renderOverview() {
         <div class="hero-visual" aria-label="Arena product preview">
           <div class="visual-top">
             <span></span><span></span><span></span>
-            <strong>submission.v0</strong>
+            <strong>operator-attempt.v0</strong>
           </div>
           <div class="visual-grid">
             <div class="score-dial">
               <span>${submissionCount ? "LIVE" : "V0"}</span>
               <strong>${submissionCount ? Math.min(99, 70 + submissionCount) : 92}</strong>
-              <small>deterministic score</small>
+              <small>task completion score</small>
             </div>
             <div class="signal-list">
+              <div><span>prompting</span><strong>rubric scored</strong></div>
               <div><span>tokens</span><strong>${tokens || "bucketed"}</strong></div>
               <div><span>tool calls</span><strong>${toolCalls || "counted"}</strong></div>
-              <div><span>security</span><strong>redacted</strong></div>
               <div><span>submit</span><strong>GitHub PR</strong></div>
             </div>
           </div>
@@ -149,14 +149,20 @@ function renderOverview() {
         </article>
         <article>
           <span class="feature-kicker">Plugin Run</span>
-          <h3>Codex and Claude are first-class interview rooms.</h3>
-          <p>The plugin captures local session ids, transcript snippets, model info, wall time, tools, tokens, and system metrics.</p>
+          <h3>Codex and Claude are the interview rooms.</h3>
+          <p>The plugin captures the operator attempt: session id, redacted transcript snippets, model, wall time, prompts, tools, tokens, and system metrics.</p>
         </article>
         <article>
           <span class="feature-kicker">PR Eval</span>
           <h3>Secretless evaluation on every submission PR.</h3>
           <p>GitHub Actions validates schemas, checks artifacts, scans redactions, computes scores, and rebuilds dashboard indexes.</p>
         </article>
+      </div>
+
+      <div class="disclosure-panel">
+        <span class="feature-kicker">Data Sharing</span>
+        <strong>Submissions are public when this repo is public.</strong>
+        <p>PRs can include metrics, artifact paths, hashes, notes, and redacted transcript snippets. Redaction is best-effort. Review every PR diff before publishing sensitive work.</p>
       </div>
 
       <div class="challenge-strip">
@@ -363,6 +369,10 @@ function openTryDialog(task) {
       <pre><code>${escapeHtml(cliFallback)}</code></pre>
       <button class="secondary" data-copy="${escapeHtml(cliFallback)}">Copy CLI commands</button>
     </div>
+    <div class="try-disclosure">
+      <strong>Data sharing note</strong>
+      <p>Submission PRs can publish metrics, notes, artifact paths, hashes, and redacted transcript snippets. Review the PR diff before sharing anything sensitive.</p>
+    </div>
     <p class="muted">Plugin root: <code>${escapeHtml(pluginRoot)}</code>. Submissions open GitHub PRs with one JSON file.</p>
   `;
   tryContent.querySelectorAll("[data-copy]").forEach((button) => {
@@ -452,7 +462,7 @@ function renderLeaderboard() {
         <div>
           <div class="eyebrow">Cost-aware ranking</div>
           <h2>Leaderboard</h2>
-          <p>Filter by task and compare deterministic score, tokens, dollars, time, tool use, and security posture.</p>
+          <p>Compare how well each operator steered the agent: completion score, output quality, re-prompts, tokens, dollars, time, tool use, and security posture.</p>
         </div>
         <div class="leaderboard-filter">
           <label for="leaderboardTask">Task</label>
@@ -479,7 +489,7 @@ function renderLeaderboard() {
         </div>
         <div class="podium-copy">
           <h3>Rank by output and efficiency.</h3>
-          <p>Good agents should finish the task, produce the expected artifacts, spend fewer tokens, call tools intentionally, and avoid leaking secrets.</p>
+          <p>Strong operators should clarify intent, prompt cleanly, recover from bad outputs, produce required artifacts, spend fewer tokens, use tools intentionally, and avoid leaking secrets.</p>
         </div>
       </div>
 

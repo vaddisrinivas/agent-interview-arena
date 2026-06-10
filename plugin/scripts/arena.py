@@ -397,7 +397,11 @@ def create_pr(root: Path, submission_path: Path, submission_id: str, task_id: st
             "--title",
             f"Submission: {task_id}",
             "--body",
-            f"Agent Interview Arena submission `{submission_id}` for task `{task_id}`.",
+            (
+                f"Agent Interview Arena submission `{submission_id}` for task `{task_id}`.\n\n"
+                "Data sharing note: this PR may include metrics, notes, artifact paths, hashes, and redacted transcript snippets. "
+                "Redaction is best-effort. Review the diff before publishing sensitive work."
+            ),
         ],
         cwd=root,
         check=True,

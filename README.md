@@ -1,6 +1,6 @@
 # Agent Interview Arena V0
 
-Plugin-first AI interview arena. GitHub repo is the database, GitHub Pages is the UI, and GitHub pull requests are the submission API.
+Plugin-first arena for measuring how well a human operator can complete real tasks with an AI agent. The repo is the database, GitHub Pages is the UI, and GitHub pull requests are the submission API.
 
 ## What exists
 
@@ -10,6 +10,20 @@ Plugin-first AI interview arena. GitHub repo is the database, GitHub Pages is th
 - Hybrid Codex/Claude plugin in `plugin/`.
 - Secretless PR evaluation in `.github/workflows/validate.yml`.
 - Deterministic tests and index builder in `scripts/` and `tests/`.
+
+## What is being measured
+
+The main subject is the operator loop, not only the model. A submission should show how well someone can:
+
+- understand the locked task
+- ask only allowed clarifying questions
+- prompt and re-prompt cleanly
+- recover from weak or wrong outputs
+- produce the required artifacts
+- spend time, tokens, dollars, and tool calls intentionally
+- avoid leaking secrets or sensitive data
+
+The model, host, token buckets, cost, and wall time are recorded as context and filters for comparing attempts.
 
 ## Local loop
 
@@ -59,13 +73,21 @@ python3 plugin/scripts/arena.py submit --notes "Done"
 
 ## Submission flow
 
-The plugin writes `submissions/<submission_id>.json`, creates a branch, commits that file, pushes it, and opens a PR with `gh`.
+The plugin writes `submissions/<submission_id>.json`, creates a branch, commits that file, pushes it, and opens a PR with `gh`. The submission represents the operator attempt: prompts, re-prompts, artifacts, metrics, and safety posture around a locked task.
 
 ```bash
 python3 plugin/scripts/arena.py submit --artifact path/to/output.md --notes "Finished"
 ```
 
-Public submissions are public. The plugin redacts common secret patterns before writing JSON, but users should still review PR diffs.
+Use `--no-pr` for local-only dry runs.
+
+## Data sharing and privacy
+
+Public repo means public PRs, public submission metadata, and public dashboard data.
+
+Submission PRs may include task ids, model names, host/app metadata, wall time, token buckets, estimated cost, tool-call counts, artifact paths, artifact sizes, hashes, notes, self-review text, system metrics, and redacted transcript snippets.
+
+Redaction is best-effort, not a guarantee. Do not submit proprietary code, customer data, personal data, secrets, credentials, private prompts, or sensitive transcripts. Review every generated PR diff before opening or merging it. Use a private fork/repo for sensitive interviews.
 
 ## PR evaluation
 
@@ -75,7 +97,7 @@ PR CI is secretless:
 - verifies `task_id`
 - checks required artifact names
 - scans for likely secrets
-- computes deterministic scores
+- computes task-completion, artifact, security, and metadata scores
 - builds dashboard indexes
 - writes a PR/job summary
 

@@ -12,6 +12,9 @@ test("dashboard has required task, submission, leaderboard surfaces", () => {
   assert.equal(html.includes("data-view=\"overview\""), true);
   assert.equal(js.includes("renderOverview"), true);
   assert.equal(js.includes("product-hero"), true);
+  assert.equal(js.includes("Measure how well people steer agents through tasks."), true);
+  assert.equal(js.includes("Data sharing note"), true);
+  assert.equal(js.includes("operator attempt"), true);
   assert.equal(html.includes('id="app"'), true);
   assert.equal(js.includes("Try this challenge"), true);
   assert.equal(js.includes("renderSubmissions"), true);

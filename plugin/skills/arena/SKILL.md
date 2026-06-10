@@ -1,11 +1,11 @@
 ---
 name: arena
-description: Run Agent Interview Arena tasks from Codex or Claude, capture local session metrics, and submit via GitHub PR.
+description: Run Agent Interview Arena tasks from Codex or Claude, capture operator prompting metrics, and submit via GitHub PR.
 ---
 
 # Arena
 
-Use this skill when user asks to run, start, status, or submit an Agent Interview Arena challenge.
+Use this skill when user asks to run, start, status, or submit an Agent Interview Arena challenge. The arena measures how well a human operator steers an agent through a locked task.
 
 ## Commands
 
@@ -20,4 +20,6 @@ Use this skill when user asks to run, start, status, or submit an Agent Intervie
 - Ask interviewer only questions listed in task JSON.
 - Produce required artifacts before submit.
 - Do not include secrets in artifacts or submission notes.
+- Treat submission PRs as public when the repo is public.
+- Redaction is best-effort; inspect the PR diff before sharing.
 - Review the generated PR diff before merge.
