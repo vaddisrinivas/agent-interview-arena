@@ -1,0 +1,36 @@
+{
+  "name": "arena",
+  "version": "0.1.0",
+  "description": "Run AI interview tasks, capture Codex/Claude metrics, and submit via GitHub PR.",
+  "author": {
+    "name": "Agent Interview Arena"
+  },
+  "repository": "https://github.com/vaddisrinivas/agent-interview-arena",
+  "license": "MIT",
+  "keywords": [
+    "interview",
+    "evaluation",
+    "metrics",
+    "tokens",
+    "leaderboard"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.codex-mcp.json",
+  "interface": {
+    "displayName": "Arena",
+    "shortDescription": "Agent interview task runner and PR submitter",
+    "longDescription": "Arena starts task interviews inside Codex or Claude, reads local session logs, captures metrics, redacts secrets, and opens GitHub pull requests with submission JSON.",
+    "developerName": "Agent Interview Arena",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "brandColor": "#087F5B",
+    "defaultPrompt": [
+      "List available Arena tasks.",
+      "Start arena-readme-triage-v0.",
+      "Submit the active Arena interview with artifacts."
+    ]
+  }
+}

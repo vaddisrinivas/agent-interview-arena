@@ -1,0 +1,19 @@
+{
+  "name": "arena",
+  "version": "0.1.0",
+  "description": "Run AI interview tasks, capture Codex/Claude metrics, and submit via GitHub PR.",
+  "author": {
+    "name": "Agent Interview Arena"
+  },
+  "repository": "https://github.com/vaddisrinivas/agent-interview-arena",
+  "license": "MIT",
+  "keywords": [
+    "interview",
+    "evaluation",
+    "metrics",
+    "tokens",
+    "leaderboard"
+  ],
+  "commands": "./commands/",
+  "skills": "./skills/"
+}

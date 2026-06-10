@@ -1,0 +1,17 @@
+{
+  "name": "agent-interview-arena",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "No-backend, plugin-first AI interview arena hosted on GitHub Pages.",
+  "scripts": {
+    "build:index": "node scripts/build-index.mjs",
+    "validate": "node scripts/validate.mjs --ci",
+    "pr:eval": "node scripts/pr-eval.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "npm test && npm run build:index && npm run validate && npm run pr:eval"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

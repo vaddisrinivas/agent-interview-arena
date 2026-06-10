@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agent Interview Arena</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <header class="topbar">
+        <div>
+          <h1>Agent Interview Arena</h1>
+          <p>Plugin-first AI interview tasks. GitHub PRs are submissions.</p>
+        </div>
+        <nav class="tabs" aria-label="Primary">
+          <button class="tab is-active" data-view="tasks">Tasks</button>
+          <button class="tab" data-view="submissions">Submissions</button>
+          <button class="tab" data-view="leaderboard">Leaderboard</button>
+        </nav>
+      </header>
+
+      <main id="view" class="view" aria-live="polite">
+        <div class="loading">Loading arena data...</div>
+      </main>
+    </div>
+
+    <dialog id="tryDialog" class="try-dialog">
+      <form method="dialog">
+        <div class="dialog-head">
+          <div>
+            <h2 id="tryTitle">Try challenge</h2>
+            <p id="trySubtitle"></p>
+          </div>
+          <button class="icon-button" value="cancel" aria-label="Close">x</button>
+        </div>
+        <div id="tryContent" class="try-content"></div>
+      </form>
+    </dialog>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

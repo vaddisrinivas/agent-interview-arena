@@ -1,0 +1,4 @@
+{"timestamp":"2026-06-09T10:00:00Z","type":"session_meta","payload":{"id":"codex-test-session","model":"gpt-5.4-codex"}}
+{"timestamp":"2026-06-09T10:00:01Z","type":"response_item","payload":{"item":{"type":"message","role":"user","content":[{"type":"input_text","text":"start task"}]}}}
+{"timestamp":"2026-06-09T10:00:05Z","type":"response_item","payload":{"item":{"type":"function_call","name":"shell","arguments":"ls"}}}
+{"timestamp":"2026-06-09T10:00:08Z","type":"event_msg","payload":{"model":"gpt-5.4-codex","usage":{"input_tokens":100,"output_tokens":50,"cached_input_tokens":20,"reasoning_tokens":5,"total_tokens":175}}}

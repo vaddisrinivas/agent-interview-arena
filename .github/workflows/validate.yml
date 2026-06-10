@@ -1,0 +1,42 @@
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm test
+      - run: npm run build:index
+      - run: npm run validate
+      - name: PR eval summary
+        run: |
+          npm run pr:eval | tee public/data/eval-summary.md
+          cat public/data/eval-summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Comment same-repo PR
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment "${{ github.event.pull_request.number }}" --body-file public/data/eval-summary.md
+      - name: Commit generated dashboard data on main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          if ! git diff --quiet -- public/data/tasks.json public/data/submissions.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add public/data/tasks.json public/data/submissions.json
+            git commit -m "Rebuild arena dashboard data"
+            git push
+          fi

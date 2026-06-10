@@ -1,0 +1,85 @@
+{
+  "schema_version": "submission.v0",
+  "submission_id": "sample-submission",
+  "task_id": "arena-readme-triage-v0",
+  "created_at": "2026-06-09T10:00:00Z",
+  "host": {
+    "app": "codex",
+    "hostname": "test-host",
+    "repo_root": "/tmp/arena"
+  },
+  "agent": {
+    "type": "codex",
+    "model": "gpt-5.4-codex",
+    "models_seen": ["gpt-5.4-codex"]
+  },
+  "chat": {
+    "id": "codex-test-session",
+    "source_path": "/tmp/codex-session.jsonl"
+  },
+  "metrics": {
+    "wall_time_seconds": 300,
+    "tokens": {
+      "prompt": 100,
+      "completion": 50,
+      "cached": 20,
+      "reasoning": 5,
+      "total": 175
+    },
+    "cost_usd_estimate": 0,
+    "pricing": {
+      "source": "test",
+      "input_per_mtok": 0,
+      "output_per_mtok": 0
+    },
+    "tool_calls": {
+      "total": 1,
+      "by_name": {
+        "shell": 1
+      }
+    },
+    "reprompts": 0,
+    "user_messages": 1,
+    "assistant_messages": 1,
+    "events_seen": 4,
+    "system": {
+      "start": {},
+      "end": {}
+    }
+  },
+  "skills": [
+    {
+      "skill_id": "repo_navigation",
+      "name": "Repository navigation",
+      "weight": 0.25
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "arena-report.md",
+      "exists": true,
+      "size_bytes": 1200,
+      "sha256": "abc"
+    }
+  ],
+  "quality": {
+    "self_review": "Done",
+    "human_quality_score": null,
+    "llm_judge_score": null
+  },
+  "security": {
+    "redaction": "common_secret_patterns_v0",
+    "findings": [],
+    "blocked": false
+  },
+  "transcript": {
+    "capture": "redacted_snippets",
+    "events": [
+      {
+        "timestamp": "2026-06-09T10:00:00Z",
+        "type": "message",
+        "text": "start task"
+      }
+    ]
+  }
+}

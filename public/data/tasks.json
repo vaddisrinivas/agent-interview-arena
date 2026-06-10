@@ -1,0 +1,250 @@
+{
+  "schema_version": "arena.index.v0",
+  "tasks": [
+    {
+      "schema_version": "task.v0",
+      "task_id": "arena-json-normalizer-v0",
+      "title": "Task JSON Normalizer",
+      "difficulty": 3,
+      "tags": [
+        "json",
+        "schema",
+        "data-cleaning"
+      ],
+      "skills": [
+        {
+          "skill_id": "schema_mapping",
+          "name": "Schema mapping",
+          "weight": 0.4
+        },
+        {
+          "skill_id": "data_cleaning",
+          "name": "Data cleaning",
+          "weight": 0.3
+        },
+        {
+          "skill_id": "artifact_validation",
+          "name": "Artifact validation",
+          "weight": 0.3
+        }
+      ],
+      "prompt": "Normalize the messy task object below into task.v0 JSON. Preserve intent, convert free-text fields into structured fields, and add a clear expected_output and artifacts list.\n\nMessy object:\n{\"id\":\"cost-dashboard-task\",\"name\":\"make me see token waste\",\"diff\":\"medium\",\"stuff\":\"look at agent logs and make dashboard summary. needs tokens dollars time tools security. output should be md + json. bot can answer only from task text.\"}",
+      "expected_output": {
+        "description": "A valid task.v0 JSON artifact for the messy input.",
+        "must_include": [
+          "schema_version task.v0",
+          "task_id cost-dashboard-task",
+          "skills array",
+          "expected_output object",
+          "artifacts array with markdown and json artifacts",
+          "interviewer.allowed_questions"
+        ]
+      },
+      "artifacts": [
+        {
+          "artifact_id": "normalized_task",
+          "path": "normalized-task.json",
+          "type": "json",
+          "required": true,
+          "description": "Normalized task.v0 JSON."
+        }
+      ],
+      "evaluation": {
+        "mode": "deterministic_plus_human",
+        "weights": {
+          "artifact_completeness": 0.5,
+          "security": 0.15,
+          "efficiency": 0.15,
+          "human_quality": 0.2
+        },
+        "rubric": [
+          "JSON parses cleanly.",
+          "Original intent is preserved.",
+          "Evaluation criteria are structured and filterable.",
+          "Interviewer constraints are explicit."
+        ]
+      },
+      "interviewer": {
+        "allowed_questions": [
+          "Should I invent missing fields?",
+          "Should output be compact or verbose?",
+          "Can I change the task id?"
+        ],
+        "answers": {
+          "Should I invent missing fields?": "Add minimal fields needed for valid task.v0. Keep invented details conservative.",
+          "Should output be compact or verbose?": "Compact but complete.",
+          "Can I change the task id?": "No. Use cost-dashboard-task."
+        }
+      },
+      "security_notes": [
+        "Do not include real logs or secrets in the normalized sample."
+      ]
+    },
+    {
+      "schema_version": "task.v0",
+      "task_id": "arena-readme-triage-v0",
+      "title": "Repository Onboarding Triage",
+      "difficulty": 2,
+      "tags": [
+        "repo-navigation",
+        "documentation",
+        "triage"
+      ],
+      "skills": [
+        {
+          "skill_id": "repo_navigation",
+          "name": "Repository navigation",
+          "weight": 0.25
+        },
+        {
+          "skill_id": "artifact_writing",
+          "name": "Concise artifact writing",
+          "weight": 0.35
+        },
+        {
+          "skill_id": "risk_triage",
+          "name": "Risk triage",
+          "weight": 0.4
+        }
+      ],
+      "prompt": "Inspect the repository root and produce a short onboarding triage artifact for a new engineer. Do not edit source files except the requested artifact.",
+      "expected_output": {
+        "description": "A markdown report that identifies the repo purpose, important commands, important directories, and the top risks/blockers for a new contributor.",
+        "must_include": [
+          "repo purpose in 2-4 sentences",
+          "at least 3 runnable commands",
+          "at least 3 key paths",
+          "top 3 risks or unknowns",
+          "one recommended first issue"
+        ]
+      },
+      "artifacts": [
+        {
+          "artifact_id": "onboarding_report",
+          "path": "arena-report.md",
+          "type": "markdown",
+          "required": true,
+          "description": "New-engineer onboarding triage report."
+        }
+      ],
+      "evaluation": {
+        "mode": "deterministic_plus_human",
+        "weights": {
+          "artifact_completeness": 0.45,
+          "security": 0.2,
+          "efficiency": 0.15,
+          "human_quality": 0.2
+        },
+        "rubric": [
+          "Report is specific to the inspected repository.",
+          "Commands and paths are real and useful.",
+          "Risks are concrete, not generic.",
+          "No secrets or private data are copied into the report."
+        ]
+      },
+      "interviewer": {
+        "allowed_questions": [
+          "What files should I inspect first?",
+          "What level of detail should the report include?",
+          "Can I include commands I did not run?"
+        ],
+        "answers": {
+          "What files should I inspect first?": "Start with README, package/config files, scripts, tests, and top-level directories.",
+          "What level of detail should the report include?": "Short and actionable. Prefer exact paths and commands over broad summaries.",
+          "Can I include commands I did not run?": "Yes, but mark them as inferred if you did not run them."
+        }
+      },
+      "security_notes": [
+        "Do not include environment variables, tokens, private keys, or credential file contents."
+      ]
+    },
+    {
+      "schema_version": "task.v0",
+      "task_id": "arena-security-redaction-v0",
+      "title": "Transcript Security Redaction",
+      "difficulty": 3,
+      "tags": [
+        "security",
+        "redaction",
+        "transcript"
+      ],
+      "skills": [
+        {
+          "skill_id": "secret_detection",
+          "name": "Secret detection",
+          "weight": 0.45
+        },
+        {
+          "skill_id": "safe_redaction",
+          "name": "Safe redaction",
+          "weight": 0.35
+        },
+        {
+          "skill_id": "structured_reporting",
+          "name": "Structured reporting",
+          "weight": 0.2
+        }
+      ],
+      "prompt": "Given the transcript excerpt below, produce a redacted markdown transcript and a structured JSON security findings file. Do not preserve secret values.\n\nTranscript excerpt:\nUser: deploy this with token ghp_exampleShouldBeRemoved1234567890\nAssistant: I can use AWS_ACCESS_KEY_ID=AKIAEXAMPLE000000000 and password=hunter2.\nTool: wrote config containing api_key=sk-exampleShouldBeRemoved1234567890",
+      "fixture_safety": {
+        "allow_secret_like_values": true,
+        "reason": "Synthetic redaction fixture. Values are intentionally fake but scanner-shaped."
+      },
+      "expected_output": {
+        "description": "A redacted markdown transcript and JSON findings file with secret classes, severity, and remediation notes.",
+        "must_include": [
+          "all token-like values replaced with [REDACTED]",
+          "findings JSON with at least 3 findings",
+          "severity for each finding",
+          "remediation for each finding"
+        ]
+      },
+      "artifacts": [
+        {
+          "artifact_id": "redacted_transcript",
+          "path": "redacted-transcript.md",
+          "type": "markdown",
+          "required": true,
+          "description": "Redacted transcript excerpt."
+        },
+        {
+          "artifact_id": "security_findings",
+          "path": "security-findings.json",
+          "type": "json",
+          "required": true,
+          "description": "Structured security findings."
+        }
+      ],
+      "evaluation": {
+        "mode": "deterministic_plus_human",
+        "weights": {
+          "artifact_completeness": 0.4,
+          "security": 0.35,
+          "efficiency": 0.05,
+          "human_quality": 0.2
+        },
+        "rubric": [
+          "No raw secret-like strings remain.",
+          "Findings identify GitHub token, AWS key, password, and API key patterns.",
+          "Remediation notes are practical.",
+          "Output is concise and reviewable."
+        ]
+      },
+      "interviewer": {
+        "allowed_questions": [
+          "Should I keep partial token prefixes?",
+          "Should I include the original excerpt?",
+          "How detailed should remediation be?"
+        ],
+        "answers": {
+          "Should I keep partial token prefixes?": "No. Replace secret values fully with [REDACTED].",
+          "Should I include the original excerpt?": "No. Include only redacted content.",
+          "How detailed should remediation be?": "One short actionable remediation per finding."
+        }
+      },
+      "security_notes": [
+        "Never copy raw token-like values into output artifacts."
+      ]
+    }
+  ]
+}

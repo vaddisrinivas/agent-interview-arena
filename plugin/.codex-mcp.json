@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "arena": {
+      "command": "python3",
+      "args": [
+        "./scripts/arena_mcp.py"
+      ],
+      "env": {}
+    }
+  }
+}

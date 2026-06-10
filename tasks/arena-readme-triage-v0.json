@@ -1,0 +1,74 @@
+{
+  "schema_version": "task.v0",
+  "task_id": "arena-readme-triage-v0",
+  "title": "Repository Onboarding Triage",
+  "difficulty": 2,
+  "tags": ["repo-navigation", "documentation", "triage"],
+  "skills": [
+    {
+      "skill_id": "repo_navigation",
+      "name": "Repository navigation",
+      "weight": 0.25
+    },
+    {
+      "skill_id": "artifact_writing",
+      "name": "Concise artifact writing",
+      "weight": 0.35
+    },
+    {
+      "skill_id": "risk_triage",
+      "name": "Risk triage",
+      "weight": 0.4
+    }
+  ],
+  "prompt": "Inspect the repository root and produce a short onboarding triage artifact for a new engineer. Do not edit source files except the requested artifact.",
+  "expected_output": {
+    "description": "A markdown report that identifies the repo purpose, important commands, important directories, and the top risks/blockers for a new contributor.",
+    "must_include": [
+      "repo purpose in 2-4 sentences",
+      "at least 3 runnable commands",
+      "at least 3 key paths",
+      "top 3 risks or unknowns",
+      "one recommended first issue"
+    ]
+  },
+  "artifacts": [
+    {
+      "artifact_id": "onboarding_report",
+      "path": "arena-report.md",
+      "type": "markdown",
+      "required": true,
+      "description": "New-engineer onboarding triage report."
+    }
+  ],
+  "evaluation": {
+    "mode": "deterministic_plus_human",
+    "weights": {
+      "artifact_completeness": 0.45,
+      "security": 0.2,
+      "efficiency": 0.15,
+      "human_quality": 0.2
+    },
+    "rubric": [
+      "Report is specific to the inspected repository.",
+      "Commands and paths are real and useful.",
+      "Risks are concrete, not generic.",
+      "No secrets or private data are copied into the report."
+    ]
+  },
+  "interviewer": {
+    "allowed_questions": [
+      "What files should I inspect first?",
+      "What level of detail should the report include?",
+      "Can I include commands I did not run?"
+    ],
+    "answers": {
+      "What files should I inspect first?": "Start with README, package/config files, scripts, tests, and top-level directories.",
+      "What level of detail should the report include?": "Short and actionable. Prefer exact paths and commands over broad summaries.",
+      "Can I include commands I did not run?": "Yes, but mark them as inferred if you did not run them."
+    }
+  },
+  "security_notes": [
+    "Do not include environment variables, tokens, private keys, or credential file contents."
+  ]
+}

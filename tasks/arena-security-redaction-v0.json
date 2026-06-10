@@ -1,0 +1,84 @@
+{
+  "schema_version": "task.v0",
+  "task_id": "arena-security-redaction-v0",
+  "title": "Transcript Security Redaction",
+  "difficulty": 3,
+  "tags": ["security", "redaction", "transcript"],
+  "skills": [
+    {
+      "skill_id": "secret_detection",
+      "name": "Secret detection",
+      "weight": 0.45
+    },
+    {
+      "skill_id": "safe_redaction",
+      "name": "Safe redaction",
+      "weight": 0.35
+    },
+    {
+      "skill_id": "structured_reporting",
+      "name": "Structured reporting",
+      "weight": 0.2
+    }
+  ],
+  "prompt": "Given the transcript excerpt below, produce a redacted markdown transcript and a structured JSON security findings file. Do not preserve secret values.\n\nTranscript excerpt:\nUser: deploy this with token ghp_exampleShouldBeRemoved1234567890\nAssistant: I can use AWS_ACCESS_KEY_ID=AKIAEXAMPLE000000000 and password=hunter2.\nTool: wrote config containing api_key=sk-exampleShouldBeRemoved1234567890",
+  "fixture_safety": {
+    "allow_secret_like_values": true,
+    "reason": "Synthetic redaction fixture. Values are intentionally fake but scanner-shaped."
+  },
+  "expected_output": {
+    "description": "A redacted markdown transcript and JSON findings file with secret classes, severity, and remediation notes.",
+    "must_include": [
+      "all token-like values replaced with [REDACTED]",
+      "findings JSON with at least 3 findings",
+      "severity for each finding",
+      "remediation for each finding"
+    ]
+  },
+  "artifacts": [
+    {
+      "artifact_id": "redacted_transcript",
+      "path": "redacted-transcript.md",
+      "type": "markdown",
+      "required": true,
+      "description": "Redacted transcript excerpt."
+    },
+    {
+      "artifact_id": "security_findings",
+      "path": "security-findings.json",
+      "type": "json",
+      "required": true,
+      "description": "Structured security findings."
+    }
+  ],
+  "evaluation": {
+    "mode": "deterministic_plus_human",
+    "weights": {
+      "artifact_completeness": 0.4,
+      "security": 0.35,
+      "efficiency": 0.05,
+      "human_quality": 0.2
+    },
+    "rubric": [
+      "No raw secret-like strings remain.",
+      "Findings identify GitHub token, AWS key, password, and API key patterns.",
+      "Remediation notes are practical.",
+      "Output is concise and reviewable."
+    ]
+  },
+  "interviewer": {
+    "allowed_questions": [
+      "Should I keep partial token prefixes?",
+      "Should I include the original excerpt?",
+      "How detailed should remediation be?"
+    ],
+    "answers": {
+      "Should I keep partial token prefixes?": "No. Replace secret values fully with [REDACTED].",
+      "Should I include the original excerpt?": "No. Include only redacted content.",
+      "How detailed should remediation be?": "One short actionable remediation per finding."
+    }
+  },
+  "security_notes": [
+    "Never copy raw token-like values into output artifacts."
+  ]
+}

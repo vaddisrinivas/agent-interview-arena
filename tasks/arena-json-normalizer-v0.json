@@ -1,0 +1,75 @@
+{
+  "schema_version": "task.v0",
+  "task_id": "arena-json-normalizer-v0",
+  "title": "Task JSON Normalizer",
+  "difficulty": 3,
+  "tags": ["json", "schema", "data-cleaning"],
+  "skills": [
+    {
+      "skill_id": "schema_mapping",
+      "name": "Schema mapping",
+      "weight": 0.4
+    },
+    {
+      "skill_id": "data_cleaning",
+      "name": "Data cleaning",
+      "weight": 0.3
+    },
+    {
+      "skill_id": "artifact_validation",
+      "name": "Artifact validation",
+      "weight": 0.3
+    }
+  ],
+  "prompt": "Normalize the messy task object below into task.v0 JSON. Preserve intent, convert free-text fields into structured fields, and add a clear expected_output and artifacts list.\n\nMessy object:\n{\"id\":\"cost-dashboard-task\",\"name\":\"make me see token waste\",\"diff\":\"medium\",\"stuff\":\"look at agent logs and make dashboard summary. needs tokens dollars time tools security. output should be md + json. bot can answer only from task text.\"}",
+  "expected_output": {
+    "description": "A valid task.v0 JSON artifact for the messy input.",
+    "must_include": [
+      "schema_version task.v0",
+      "task_id cost-dashboard-task",
+      "skills array",
+      "expected_output object",
+      "artifacts array with markdown and json artifacts",
+      "interviewer.allowed_questions"
+    ]
+  },
+  "artifacts": [
+    {
+      "artifact_id": "normalized_task",
+      "path": "normalized-task.json",
+      "type": "json",
+      "required": true,
+      "description": "Normalized task.v0 JSON."
+    }
+  ],
+  "evaluation": {
+    "mode": "deterministic_plus_human",
+    "weights": {
+      "artifact_completeness": 0.5,
+      "security": 0.15,
+      "efficiency": 0.15,
+      "human_quality": 0.2
+    },
+    "rubric": [
+      "JSON parses cleanly.",
+      "Original intent is preserved.",
+      "Evaluation criteria are structured and filterable.",
+      "Interviewer constraints are explicit."
+    ]
+  },
+  "interviewer": {
+    "allowed_questions": [
+      "Should I invent missing fields?",
+      "Should output be compact or verbose?",
+      "Can I change the task id?"
+    ],
+    "answers": {
+      "Should I invent missing fields?": "Add minimal fields needed for valid task.v0. Keep invented details conservative.",
+      "Should output be compact or verbose?": "Compact but complete.",
+      "Can I change the task id?": "No. Use cost-dashboard-task."
+    }
+  },
+  "security_notes": [
+    "Do not include real logs or secrets in the normalized sample."
+  ]
+}
