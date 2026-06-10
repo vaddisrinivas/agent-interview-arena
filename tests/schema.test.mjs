@@ -22,7 +22,7 @@ test("sample submission satisfies submission.v0", () => {
 });
 
 test("dashboard entry files exist or are buildable targets", () => {
-  for (const file of ["public/dashboard.html", "public/app.js", "public/styles.css"]) {
+  for (const file of ["public/index.html", "public/dashboard.html", "public/app.js", "public/styles.css"]) {
     assert.equal(fs.existsSync(path.join(root, file)), true, file);
   }
 });
