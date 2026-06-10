@@ -25,6 +25,69 @@ The main subject is the operator loop, not only the model. A submission should s
 
 The model, host, token buckets, cost, and wall time are recorded as context and filters for comparing attempts.
 
+## Interview model
+
+Agent Interview Arena is an interview format for AI-native work:
+
+1. The candidate receives a locked task, expected output, required artifacts, skills, and rubric.
+2. The interviewer bot can answer only the allowed questions inside the task definition.
+3. The candidate works in Codex or Claude with the arena plugin installed.
+4. The plugin captures the attempt: session id, model, prompts, re-prompts, tool calls, wall time, token buckets, estimated cost, artifacts, system metrics, and redaction flags.
+5. The candidate submits by opening a GitHub PR containing one submission JSON file.
+6. GitHub Actions validates schema, required artifacts, redaction, and deterministic scoring.
+7. The dashboard compares attempts by task completion, output quality, security, time, tokens, cost, tools, and model context.
+
+This is not a hidden AI detector and not a pure model benchmark. The point is to make AI use visible, structured, and reviewable.
+
+## Why interviews are changing
+
+Real engineering work increasingly includes AI assistants. Some companies are experimenting with AI-enabled coding interviews because banning AI can make interviews less realistic and harder to police. The better path is to define where AI is allowed, log the work, score the human steering loop, and keep humans responsible for hiring decisions.
+
+Companies can do better by:
+
+- testing realistic agent collaboration instead of pretending candidates never use AI
+- publishing allowed AI use before the interview starts
+- measuring prompt quality, re-prompts, recovery, testing, security, and artifact quality
+- keeping human review and candidate context in the final decision
+- avoiding secret collection, opaque scoring, and unreviewable transcript capture
+- using repeatable tasks, rubrics, and PR-style audit trails
+
+Relevant public guidance: the U.S. Department of Labor AI best-practices roadmap emphasizes meaningful human oversight, transparency, worker input, rights, training, and data protection. EEOC materials emphasize that AI and automated employment tools still need civil-rights compliance and adverse-impact review.
+
+## Task bank strategy
+
+The seed bank should come from short, bounded app specs rather than giant production repos. A good source is a "one repo, many small apps" collection, then each app idea becomes arena-native JSON with a locked task, expected artifacts, skills, rubric, allowed interviewer answers, and deterministic checks.
+
+Current source notes live in `docs/task-bank-sources.md`. Best first source found: `florinpop17/app-ideas`, which has beginner, intermediate, and advanced app ideas such as CSV converters, notes, pomodoro clocks, markdown previewers, to-do apps, and password generators.
+
+Good starter conversions:
+
+- CSV to JSON tool with fixtures and validation report
+- Markdown previewer with screenshot artifact
+- Pomodoro timer UI with state checklist
+- Notes app with privacy/redaction notes
+- GitHub profile card from fixture JSON
+- Password generator with security review
+
+## Demo video
+
+Framecraft config lives in `demo/arena-demo.scenes.json`.
+
+```bash
+uv run --project /Users/srinivasvaddi/Projects/framecraft python /Users/srinivasvaddi/Projects/framecraft/framecraft.py render demo/arena-demo.scenes.json --auto-duration
+```
+
+Output: `public/agent-interview-arena-demo.mp4`.
+
+## Sources and references
+
+- Department of Labor AI best practices: https://www.dol.gov/newsroom/releases/osec/osec20241016
+- EEOC 2023 AI and algorithmic fairness work: https://www.eeoc.gov/2023-annual-performance-report
+- Meta hiring process: https://www.metacareers.com/hiring-process
+- WIRED reporting on Meta AI-enabled coding interviews: https://www.wired.com/story/meta-ai-job-interview-coding/
+- App Ideas source bank: https://github.com/florinpop17/app-ideas
+- Framecraft demo-video tool: https://github.com/vaddisrinivas/framecraft
+
 ## Local loop
 
 ```bash

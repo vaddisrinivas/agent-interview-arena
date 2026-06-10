@@ -1,0 +1,81 @@
+{
+  "schema_version": "task.v0",
+  "task_id": "arena-csv-json-tool-v0",
+  "title": "CSV to JSON Tool",
+  "difficulty": 2,
+  "tags": ["small-app", "data-transform", "fixtures"],
+  "skills": [
+    {
+      "skill_id": "input_parsing",
+      "name": "Input parsing",
+      "weight": 0.35
+    },
+    {
+      "skill_id": "test_fixtures",
+      "name": "Test fixtures",
+      "weight": 0.3
+    },
+    {
+      "skill_id": "artifact_packaging",
+      "name": "Artifact packaging",
+      "weight": 0.35
+    }
+  ],
+  "prompt": "Build a tiny CSV-to-JSON conversion artifact from the locked fixture below. The solution can be a CLI script, browser page, or documented function, but it must include the converted output and a short validation report.\n\nFixture CSV:\nname,email,role\nAda Lovelace,ada@example.test,admin\nGrace Hopper,grace@example.test,maintainer\nMargaret Hamilton,margaret@example.test,reviewer",
+  "expected_output": {
+    "description": "A small conversion tool package with source, fixture, normalized JSON output, and validation notes.",
+    "must_include": [
+      "csv-json-tool/README.md",
+      "source file or HTML file for the converter",
+      "fixture CSV preserved",
+      "output JSON array with 3 records",
+      "validation notes covering headers, row count, and empty-field behavior"
+    ]
+  },
+  "artifacts": [
+    {
+      "artifact_id": "tool_readme",
+      "path": "csv-json-tool/README.md",
+      "type": "markdown",
+      "required": true,
+      "description": "How to run the converter and what was validated."
+    },
+    {
+      "artifact_id": "converted_json",
+      "path": "csv-json-tool/output.json",
+      "type": "json",
+      "required": true,
+      "description": "Converted JSON output for the locked fixture."
+    }
+  ],
+  "evaluation": {
+    "mode": "deterministic_plus_human",
+    "weights": {
+      "artifact_completeness": 0.45,
+      "security": 0.15,
+      "efficiency": 0.15,
+      "human_quality": 0.25
+    },
+    "rubric": [
+      "Output JSON preserves all rows and field names.",
+      "Implementation is small and easy to run.",
+      "Validation notes mention edge cases.",
+      "No real personal data or secrets are introduced."
+    ]
+  },
+  "interviewer": {
+    "allowed_questions": [
+      "Can I use a library?",
+      "Should emails be treated as real data?",
+      "Do I need a UI?"
+    ],
+    "answers": {
+      "Can I use a library?": "Yes, but prefer a small dependency-free implementation if practical.",
+      "Should emails be treated as real data?": "No. They use example.test and are synthetic fixture data.",
+      "Do I need a UI?": "No. CLI, single HTML file, or documented function is acceptable."
+    }
+  },
+  "security_notes": [
+    "Use only the synthetic fixture data in the prompt."
+  ]
+}

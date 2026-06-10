@@ -1,0 +1,65 @@
+{
+  "scenes": [
+    {
+      "title": "Agent Interview Arena",
+      "subtitle": "Measure how well people steer agents through real tasks.",
+      "narration": "Agent Interview Arena is a LeetCode-style interview room for AI-assisted work.",
+      "bullets": ["locked task", "agent session", "GitHub PR submission"],
+      "duration": 0,
+      "layout": "center",
+      "animation": "slide-up"
+    },
+    {
+      "title": "The new interview loop",
+      "subtitle": "The model matters. The operator loop matters more.",
+      "narration": "The candidate reads a locked task, asks allowed clarifying questions, prompts the agent, produces artifacts, and submits the transcript as a pull request.",
+      "bullets": ["prompt quality", "re-prompts", "artifacts", "security hygiene"],
+      "duration": 0,
+      "layout": "left",
+      "animation": "fade"
+    },
+    {
+      "title": "What gets measured",
+      "subtitle": "Completion, quality, cost, and judgment.",
+      "narration": "Each attempt records time, token buckets, estimated dollars, tool calls, model, output quality, prompt quality, and redaction flags.",
+      "bullets": ["time + tokens", "tool calls", "output quality", "data safety"],
+      "duration": 0,
+      "layout": "left",
+      "animation": "slide-up"
+    },
+    {
+      "title": "PRs become submissions",
+      "subtitle": "No backend. No database. GitHub is the audit trail.",
+      "narration": "The plugin writes one submission JSON file, opens a GitHub pull request, and GitHub Actions runs deterministic evaluation.",
+      "bullets": ["schema checks", "artifact checks", "redaction scan", "dashboard index"],
+      "duration": 0,
+      "layout": "left",
+      "animation": "fade"
+    },
+    {
+      "title": "Better company interviews",
+      "subtitle": "Make AI use visible instead of pretending it is not there.",
+      "narration": "Companies can test the real skill: how someone collaborates with an agent, recovers from mistakes, protects data, and ships useful artifacts.",
+      "bullets": ["transparent AI use", "human oversight", "repeatable scoring"],
+      "duration": 0,
+      "layout": "left",
+      "animation": "slide-up"
+    },
+    {
+      "title": "Start with small apps",
+      "subtitle": "Short app specs become the task bank.",
+      "narration": "Small app ideas like markdown previewers, pomodoro timers, CSV converters, and password generators become locked arena challenges.",
+      "bullets": ["frontend tasks", "data transform tasks", "security tasks"],
+      "duration": 0,
+      "layout": "center",
+      "animation": "fade"
+    }
+  ],
+  "output": "public/agent-interview-arena-demo.mp4",
+  "width": 1920,
+  "height": 1080,
+  "fps": 24,
+  "voice": "andrew",
+  "transition": "crossfade",
+  "transition_duration": 0.35
+}

@@ -1,0 +1,87 @@
+{
+  "schema_version": "task.v0",
+  "task_id": "arena-markdown-preview-v0",
+  "title": "Markdown Previewer Mini App",
+  "difficulty": 3,
+  "tags": ["small-app", "frontend", "markdown"],
+  "skills": [
+    {
+      "skill_id": "frontend_state",
+      "name": "Frontend state",
+      "weight": 0.25
+    },
+    {
+      "skill_id": "ui_quality",
+      "name": "UI quality",
+      "weight": 0.3
+    },
+    {
+      "skill_id": "artifact_evidence",
+      "name": "Artifact evidence",
+      "weight": 0.25
+    },
+    {
+      "skill_id": "safe_rendering",
+      "name": "Safe rendering",
+      "weight": 0.2
+    }
+  ],
+  "prompt": "Build a small markdown previewer mini app. It must show an editor and a preview pane, render headings, links, lists, inline code, and fenced code blocks, and include a short note about how unsafe HTML is handled. Keep it lightweight and reviewable.",
+  "expected_output": {
+    "description": "A runnable mini app artifact with source, screenshot, and safety notes.",
+    "must_include": [
+      "markdown-preview/README.md",
+      "markdown-preview/index.html or equivalent source",
+      "editor and preview panes",
+      "sample markdown content",
+      "screenshot or screenshot instructions",
+      "unsafe HTML handling note"
+    ]
+  },
+  "artifacts": [
+    {
+      "artifact_id": "preview_readme",
+      "path": "markdown-preview/README.md",
+      "type": "markdown",
+      "required": true,
+      "description": "Run instructions, feature notes, and safety choice."
+    },
+    {
+      "artifact_id": "preview_app",
+      "path": "markdown-preview/index.html",
+      "type": "html",
+      "required": true,
+      "description": "Standalone markdown previewer app."
+    }
+  ],
+  "evaluation": {
+    "mode": "deterministic_plus_human",
+    "weights": {
+      "artifact_completeness": 0.4,
+      "security": 0.2,
+      "efficiency": 0.1,
+      "human_quality": 0.3
+    },
+    "rubric": [
+      "Editor and preview interaction is clear.",
+      "Required markdown syntax renders or is explicitly documented.",
+      "Unsafe HTML behavior is explained.",
+      "UI is polished enough for a short product demo."
+    ]
+  },
+  "interviewer": {
+    "allowed_questions": [
+      "Can I use a markdown library?",
+      "Do I need persistence?",
+      "Should raw HTML render?"
+    ],
+    "answers": {
+      "Can I use a markdown library?": "Yes, if it stays lightweight and the README names the dependency.",
+      "Do I need persistence?": "No. Persistence is optional.",
+      "Should raw HTML render?": "Default to escaping or sanitizing raw HTML and document the choice."
+    }
+  },
+  "security_notes": [
+    "Do not render unsanitized user HTML without documenting the risk."
+  ]
+}

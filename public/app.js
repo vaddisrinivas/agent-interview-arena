@@ -111,6 +111,7 @@ function renderOverview() {
           <p>Locked challenges capture the human side of agent work: prompt quality, re-prompts, tool choices, artifacts, time, tokens, dollars, and security hygiene.</p>
           <div class="hero-actions">
             <button id="startArena" class="primary">Browse challenges</button>
+            <a class="secondary dark" href="agent-interview-arena-demo.mp4">Watch demo</a>
             <button id="openBoard" class="secondary dark">View leaderboard</button>
           </div>
           <div class="hero-metrics">
