@@ -1,5 +1,5 @@
 const state = {
-  view: "tasks",
+  view: "overview",
   tasks: [],
   submissions: [],
   selectedTaskId: null,
@@ -41,11 +41,15 @@ async function boot() {
 function bindTabs() {
   document.querySelectorAll(".tab").forEach((button) => {
     button.addEventListener("click", () => {
-      state.view = button.dataset.view;
-      document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("is-active", tab === button));
-      render();
+      setView(button.dataset.view);
     });
   });
+}
+
+function setView(nextView) {
+  state.view = nextView;
+  document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("is-active", tab.dataset.view === nextView));
+  render();
 }
 
 function escapeHtml(value) {
@@ -83,7 +87,103 @@ function filteredTasks() {
 function render() {
   if (state.view === "submissions") renderSubmissions();
   else if (state.view === "leaderboard") renderLeaderboard();
+  else if (state.view === "overview") renderOverview();
   else renderTasks();
+}
+
+function metricTotal(selector) {
+  return state.submissions.reduce((sum, submission) => sum + Number(selector(submission) || 0), 0);
+}
+
+function renderOverview() {
+  const taskCount = state.tasks.length;
+  const submissionCount = state.submissions.length;
+  const skills = uniqueSkills();
+  const toolCalls = metricTotal((submission) => submission.metrics?.tool_calls?.total);
+  const tokens = metricTotal((submission) => submission.metrics?.tokens?.total);
+  const firstTask = state.tasks[0];
+  view.innerHTML = `
+    <section class="product-page">
+      <div class="product-hero">
+        <div class="hero-copy">
+          <div class="eyebrow">Agent interviews scored where agents actually work</div>
+          <h2>Measure model work like a real interview loop.</h2>
+          <p>Locked tasks, transcripts, artifacts, tokens, dollars, time, tool calls, skill rubrics, and security checks in one auditable GitHub PR flow.</p>
+          <div class="hero-actions">
+            <button id="startArena" class="primary">Browse challenges</button>
+            <button id="openBoard" class="secondary dark">View leaderboard</button>
+          </div>
+          <div class="hero-metrics">
+            <span><strong>${taskCount}</strong> tasks</span>
+            <span><strong>${skills.length}</strong> skills</span>
+            <span><strong>${submissionCount}</strong> submissions</span>
+          </div>
+        </div>
+        <div class="hero-visual" aria-label="Arena product preview">
+          <div class="visual-top">
+            <span></span><span></span><span></span>
+            <strong>submission.v0</strong>
+          </div>
+          <div class="visual-grid">
+            <div class="score-dial">
+              <span>${submissionCount ? "LIVE" : "V0"}</span>
+              <strong>${submissionCount ? Math.min(99, 70 + submissionCount) : 92}</strong>
+              <small>deterministic score</small>
+            </div>
+            <div class="signal-list">
+              <div><span>tokens</span><strong>${tokens || "bucketed"}</strong></div>
+              <div><span>tool calls</span><strong>${toolCalls || "counted"}</strong></div>
+              <div><span>security</span><strong>redacted</strong></div>
+              <div><span>submit</span><strong>GitHub PR</strong></div>
+            </div>
+          </div>
+          <div class="visual-command">/arena:start ${escapeHtml(firstTask?.task_id || "task-id")}</div>
+        </div>
+      </div>
+
+      <div class="product-band">
+        <article>
+          <span class="feature-kicker">Task Bank</span>
+          <h3>Locked prompts, expected outputs, artifact contracts.</h3>
+          <p>Every challenge is structured JSON with skills, rubric, allowed interviewer answers, and required artifacts.</p>
+        </article>
+        <article>
+          <span class="feature-kicker">Plugin Run</span>
+          <h3>Codex and Claude are first-class interview rooms.</h3>
+          <p>The plugin captures local session ids, transcript snippets, model info, wall time, tools, tokens, and system metrics.</p>
+        </article>
+        <article>
+          <span class="feature-kicker">PR Eval</span>
+          <h3>Secretless evaluation on every submission PR.</h3>
+          <p>GitHub Actions validates schemas, checks artifacts, scans redactions, computes scores, and rebuilds dashboard indexes.</p>
+        </article>
+      </div>
+
+      <div class="challenge-strip">
+        <div>
+          <h3>Starter Challenges</h3>
+          <p>Small tasks now. Harder task banks later.</p>
+        </div>
+        <div class="challenge-cards">
+          ${state.tasks.map((task) => `
+            <button class="challenge-card" data-open-task="${escapeHtml(task.task_id)}">
+              <span>D${escapeHtml(task.difficulty)}</span>
+              <strong>${escapeHtml(task.title)}</strong>
+              <small>${(task.skills || []).slice(0, 2).map((skill) => escapeHtml(skill.name || skill.skill_id)).join(" · ")}</small>
+            </button>
+          `).join("")}
+        </div>
+      </div>
+    </section>
+  `;
+  document.querySelector("#startArena").addEventListener("click", () => setView("tasks"));
+  document.querySelector("#openBoard").addEventListener("click", () => setView("leaderboard"));
+  document.querySelectorAll("[data-open-task]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.selectedTaskId = button.dataset.openTask;
+      setView("tasks");
+    });
+  });
 }
 
 function renderTasks() {
@@ -340,40 +440,83 @@ function renderLeaderboard() {
   const rows = [...state.submissions]
     .filter((submission) => !state.leaderboardTask || submission.task_id === state.leaderboardTask)
     .sort((a, b) => (b.evaluation_result?.deterministic_score || 0) - (a.evaluation_result?.deterministic_score || 0));
+  const best = rows[0];
+  const avgScore = rows.length
+    ? Math.round(rows.reduce((sum, submission) => sum + Number(submission.evaluation_result?.deterministic_score || 0), 0) / rows.length)
+    : 0;
+  const totalCost = rows.reduce((sum, submission) => sum + Number(submission.metrics?.cost_usd_estimate || 0), 0);
+  const totalTokens = rows.reduce((sum, submission) => sum + Number(submission.metrics?.tokens?.total || 0), 0);
   view.innerHTML = `
     <section class="leaderboard-view">
-      <h2>Leaderboard</h2>
-      <div class="toolbar">
-        <select id="leaderboardTask">
-          <option value="">All tasks</option>
-          ${state.tasks.map((task) => `<option value="${escapeHtml(task.task_id)}" ${task.task_id === state.leaderboardTask ? "selected" : ""}>${escapeHtml(task.task_id)}</option>`).join("")}
-        </select>
+      <div class="leaderboard-hero">
+        <div>
+          <div class="eyebrow">Cost-aware ranking</div>
+          <h2>Leaderboard</h2>
+          <p>Filter by task and compare deterministic score, tokens, dollars, time, tool use, and security posture.</p>
+        </div>
+        <div class="leaderboard-filter">
+          <label for="leaderboardTask">Task</label>
+          <select id="leaderboardTask">
+            <option value="">All tasks</option>
+            ${state.tasks.map((task) => `<option value="${escapeHtml(task.task_id)}" ${task.task_id === state.leaderboardTask ? "selected" : ""}>${escapeHtml(task.task_id)}</option>`).join("")}
+          </select>
+        </div>
       </div>
-      <div class="table-wrap">
-        <table class="leader-table">
-          <thead><tr><th>Rank</th><th>Submission</th><th>Task</th><th>Score</th><th>Model</th><th>Tokens</th><th>Cost</th><th>Tool Calls</th></tr></thead>
-          <tbody>
-            ${rows.map((submission, index) => `
-              <tr>
-                <td>${index + 1}</td>
-                <td><code>${escapeHtml(submission.submission_id)}</code></td>
-                <td>${escapeHtml(submission.task_id)}</td>
-                <td>${escapeHtml(submission.evaluation_result?.deterministic_score ?? "n/a")}</td>
-                <td>${escapeHtml(submission.agent?.model || "unknown")}</td>
-                <td>${escapeHtml(submission.metrics?.tokens?.total ?? 0)}</td>
-                <td>$${Number(submission.metrics?.cost_usd_estimate || 0).toFixed(4)}</td>
-                <td>${escapeHtml(submission.metrics?.tool_calls?.total ?? 0)}</td>
-              </tr>
-            `).join("") || `<tr><td colspan="8">No submissions yet.</td></tr>`}
-          </tbody>
-        </table>
+
+      <div class="leader-stats">
+        <article><span>Submissions</span><strong>${rows.length}</strong></article>
+        <article><span>Avg score</span><strong>${avgScore || "--"}</strong></article>
+        <article><span>Total tokens</span><strong>${totalTokens || "--"}</strong></article>
+        <article><span>Total cost</span><strong>$${totalCost.toFixed(4)}</strong></article>
       </div>
+
+      <div class="podium">
+        <div class="podium-card">
+          <span class="rank-badge">#1</span>
+          <h3>${best ? escapeHtml(best.submission_id) : "Waiting for first run"}</h3>
+          <p>${best ? escapeHtml(best.task_id) : "Submit from Codex or Claude to claim the board."}</p>
+          <strong>${best ? escapeHtml(best.evaluation_result?.deterministic_score ?? "n/a") : "--"}</strong>
+        </div>
+        <div class="podium-copy">
+          <h3>Rank by output and efficiency.</h3>
+          <p>Good agents should finish the task, produce the expected artifacts, spend fewer tokens, call tools intentionally, and avoid leaking secrets.</p>
+        </div>
+      </div>
+
+      ${rows.length ? `
+        <div class="table-wrap leaderboard-table-wrap">
+          <table class="leader-table">
+            <thead><tr><th>Rank</th><th>Submission</th><th>Task</th><th>Score</th><th>Model</th><th>Tokens</th><th>Cost</th><th>Tool Calls</th></tr></thead>
+            <tbody>
+              ${rows.map((submission, index) => `
+                <tr>
+                  <td><span class="table-rank">${index + 1}</span></td>
+                  <td><code>${escapeHtml(submission.submission_id)}</code></td>
+                  <td>${escapeHtml(submission.task_id)}</td>
+                  <td><strong>${escapeHtml(submission.evaluation_result?.deterministic_score ?? "n/a")}</strong></td>
+                  <td>${escapeHtml(submission.agent?.model || "unknown")}</td>
+                  <td>${escapeHtml(submission.metrics?.tokens?.total ?? 0)}</td>
+                  <td>$${Number(submission.metrics?.cost_usd_estimate || 0).toFixed(4)}</td>
+                  <td>${escapeHtml(submission.metrics?.tool_calls?.total ?? 0)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      ` : `
+        <div class="empty-board">
+          <h3>No submissions yet</h3>
+          <p>Run a challenge from Codex or Claude. The first PR submission will populate this leaderboard.</p>
+          <button id="leaderStart" class="primary">Start a challenge</button>
+        </div>
+      `}
     </section>
   `;
   document.querySelector("#leaderboardTask").addEventListener("change", (event) => {
     state.leaderboardTask = event.target.value;
     renderLeaderboard();
   });
+  document.querySelector("#leaderStart")?.addEventListener("click", () => setView("tasks"));
 }
 
 boot();

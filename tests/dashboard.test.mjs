@@ -9,6 +9,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 test("dashboard has required task, submission, leaderboard surfaces", () => {
   const html = fs.readFileSync(path.join(root, "public/dashboard.html"), "utf8");
   const js = fs.readFileSync(path.join(root, "public/app.js"), "utf8");
+  assert.equal(html.includes("data-view=\"overview\""), true);
+  assert.equal(js.includes("renderOverview"), true);
+  assert.equal(js.includes("product-hero"), true);
   assert.equal(html.includes('id="app"'), true);
   assert.equal(js.includes("Try this challenge"), true);
   assert.equal(js.includes("renderSubmissions"), true);
