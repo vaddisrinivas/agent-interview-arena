@@ -16,6 +16,7 @@ test("dashboard has required task, submission, leaderboard surfaces", () => {
   assert.equal(js.includes("Data sharing note"), true);
   assert.equal(js.includes("operator attempt"), true);
   assert.equal(js.includes("agent-interview-arena-demo.mp4"), true);
+  assert.equal(js.includes("validatorPill"), true);
   assert.equal(html.includes('id="app"'), true);
   assert.equal(js.includes("Try this challenge"), true);
   assert.equal(js.includes("renderSubmissions"), true);

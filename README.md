@@ -1,4 +1,4 @@
-# Agent Interview Arena V0
+# Agent Interview Arena V2
 
 Plugin-first arena for measuring how well a human operator can complete real tasks with an AI agent. The repo is the database, GitHub Pages is the UI, and GitHub pull requests are the submission API.
 
@@ -6,10 +6,10 @@ Plugin-first arena for measuring how well a human operator can complete real tas
 
 - Static LeetCode-style dashboard in `public/`.
 - MVPy-style task JSON in `tasks/`.
-- One JSON file per submission in `submissions/`.
+- Folder-based `submission.v1` packages in `submissions/`, with legacy `submission.v0` JSON still readable.
 - Hybrid Codex/Claude plugin in `plugin/`.
 - Secretless PR evaluation in `.github/workflows/validate.yml`.
-- Deterministic tests and index builder in `scripts/` and `tests/`.
+- Loosely coupled contracts, validators, importers, deterministic tests, and index builder in `scripts/`, `validators/`, and `tests/`.
 
 ## What is being measured
 
@@ -33,8 +33,8 @@ Agent Interview Arena is an interview format for AI-native work:
 2. The interviewer bot can answer only the allowed questions inside the task definition.
 3. The candidate works in Codex or Claude with the arena plugin installed.
 4. The plugin captures the attempt: session id, model, prompts, re-prompts, tool calls, wall time, token buckets, estimated cost, artifacts, system metrics, and redaction flags.
-5. The candidate submits by opening a GitHub PR containing one submission JSON file.
-6. GitHub Actions validates schema, required artifacts, redaction, and deterministic scoring.
+5. The candidate submits by opening a GitHub PR containing one submission folder with JSON plus artifact files.
+6. GitHub Actions validates schema, required artifacts, redaction, task-owned validators, and deterministic scoring.
 7. The dashboard compares attempts by task completion, output quality, security, time, tokens, cost, tools, and model context.
 
 This is not a hidden AI detector and not a pure model benchmark. The point is to make AI use visible, structured, and reviewable.
@@ -78,6 +78,19 @@ uv run --project /Users/srinivasvaddi/Projects/framecraft python /Users/srinivas
 ```
 
 Output: `public/agent-interview-arena-demo.mp4`.
+
+## V2 architecture
+
+V2 is intentionally loose coupled. Each layer speaks JSON or filesystem contracts:
+
+- tasks declare prompts, artifacts, rubrics, and optional trusted validator metadata
+- plugin runtime captures sessions and writes `submission.v1` folder packages
+- validators live in repo-owned `validators/tasks/` modules and return `validator_result.v1`
+- PR eval orchestrates contracts but does not contain task-specific branches
+- dashboard reads generated JSON only
+- importers draft task JSON without directly mutating the task bank by default
+
+See `docs/architecture-v2.md`.
 
 ## Sources and references
 
@@ -131,24 +144,25 @@ Direct CLI fallback:
 python3 plugin/scripts/arena.py tasks
 python3 plugin/scripts/arena.py start arena-readme-triage-v0
 python3 plugin/scripts/arena.py status
-python3 plugin/scripts/arena.py submit --notes "Done"
+python3 plugin/scripts/arena.py submit --dry-run --artifact path/to/output.md
+python3 plugin/scripts/arena.py submit --ack-public-data --artifact path/to/output.md --notes "Done"
 ```
 
 ## Submission flow
 
-The plugin writes `submissions/<submission_id>.json`, creates a branch, commits that file, pushes it, and opens a PR with `gh`. The submission represents the operator attempt: prompts, re-prompts, artifacts, metrics, and safety posture around a locked task.
+The plugin writes `submissions/<submission_id>/submission.json`, copies artifacts into `submissions/<submission_id>/artifacts/`, creates a branch, commits the folder, pushes it, and opens a PR with `gh`. The submission represents the operator attempt: prompts, re-prompts, artifacts, metrics, and safety posture around a locked task.
 
 ```bash
-python3 plugin/scripts/arena.py submit --artifact path/to/output.md --notes "Finished"
+python3 plugin/scripts/arena.py submit --ack-public-data --artifact path/to/output.md --notes "Finished"
 ```
 
-Use `--no-pr` for local-only dry runs.
+Use `--dry-run` to preview without writing files. Use `--no-pr` to write a local submission package without opening a PR.
 
 ## Data sharing and privacy
 
 Public repo means public PRs, public submission metadata, and public dashboard data.
 
-Submission PRs may include task ids, model names, host/app metadata, wall time, token buckets, estimated cost, tool-call counts, artifact paths, artifact sizes, hashes, notes, self-review text, system metrics, and redacted transcript snippets.
+Submission PRs may include task ids, model names, host/app metadata, wall time, token buckets, estimated cost, tool-call counts, artifact files, artifact paths, artifact sizes, hashes, notes, self-review text, system metrics, and redacted transcript snippets.
 
 Redaction is best-effort, not a guarantee. Do not submit proprietary code, customer data, personal data, secrets, credentials, private prompts, or sensitive transcripts. Review every generated PR diff before opening or merging it. Use a private fork/repo for sensitive interviews.
 
@@ -159,6 +173,7 @@ PR CI is secretless:
 - validates task and submission JSON
 - verifies `task_id`
 - checks required artifact names
+- runs trusted task validators when declared
 - scans for likely secrets
 - computes task-completion, artifact, security, and metadata scores
 - builds dashboard indexes

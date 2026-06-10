@@ -2,7 +2,7 @@
 import { buildIndexes, repoRootFromMeta, validateRepo } from "./arena-core.mjs";
 
 const root = process.env.ARENA_REPO || repoRootFromMeta(import.meta.url);
-const build = buildIndexes(root);
+const build = await buildIndexes(root);
 const validation = validateRepo(root);
 const problems = [...build.problems, ...validation.problems];
 const uniqueProblems = [];

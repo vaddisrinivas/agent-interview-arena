@@ -50,11 +50,18 @@
   ],
   "evaluation": {
     "mode": "deterministic_plus_human",
+    "validator": {
+      "id": "csv_json_tool_v0",
+      "type": "node",
+      "path": "validators/tasks/csv-json-tool-v0.mjs",
+      "timeout_seconds": 10
+    },
     "weights": {
-      "artifact_completeness": 0.45,
-      "security": 0.15,
-      "efficiency": 0.15,
-      "human_quality": 0.25
+      "task_validator": 0.45,
+      "artifact_completeness": 0.2,
+      "security": 0.2,
+      "efficiency": 0.05,
+      "human_quality": 0.1
     },
     "rubric": [
       "Output JSON preserves all rows and field names.",

@@ -1,6 +1,6 @@
 ---
 name: submit
-description: "Submit the active Agent Interview Arena task. Usage: /arena:submit --artifact <path> --notes done"
+description: "Submit the active Agent Interview Arena task. Usage: /arena:submit --dry-run --artifact <path>, then /arena:submit --ack-public-data --artifact <path> --notes done"
 user_invocable: true
 ---
 

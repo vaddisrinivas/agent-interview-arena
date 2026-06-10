@@ -6,9 +6,11 @@ import datetime as dt
 import glob
 import hashlib
 import json
+import mimetypes
 import os
 import platform
 import re
+import shutil
 import socket
 import subprocess
 import sys
@@ -16,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 TASK_SCHEMA_VERSION = "task.v0"
-SUBMISSION_SCHEMA_VERSION = "submission.v0"
+SUBMISSION_SCHEMA_VERSION = "submission.v1"
 STATE_DIR = Path.home() / ".agent-interview-arena"
 STATE_FILE = STATE_DIR / "state.json"
 
@@ -315,20 +317,66 @@ def system_snapshot() -> dict[str, Any]:
     return snapshot
 
 
-def summarize_artifact(path_text: str, cwd: Path) -> dict[str, Any]:
+def relative_to_cwd(path: Path, cwd: Path) -> str | None:
+    try:
+        return path.resolve().relative_to(cwd.resolve()).as_posix()
+    except ValueError:
+        return None
+
+
+def safe_artifact_rel(path_text: str, cwd: Path) -> tuple[Path, str, str]:
     path = Path(path_text).expanduser()
     if not path.is_absolute():
         path = cwd / path
-    exists = path.exists()
+    rel = relative_to_cwd(path, cwd)
+    if rel:
+        stored_path = f"artifacts/{rel}"
+        logical_path = rel
+    else:
+        stored_path = f"artifacts/external/{path.name}"
+        logical_path = path_text
+    return path, logical_path, stored_path
+
+
+def summarize_artifact(path_text: str, cwd: Path) -> dict[str, Any]:
+    path, logical_path, stored_path = safe_artifact_rel(path_text, cwd)
+    exists = path.exists() and path.is_file()
+    media_type, _ = mimetypes.guess_type(str(path))
     summary = {
-        "path": path_text,
+        "path": logical_path,
+        "stored_path": stored_path,
         "exists": exists,
         "size_bytes": path.stat().st_size if exists and path.is_file() else 0,
         "sha256": None,
+        "media_type": media_type or "application/octet-stream",
     }
     if exists and path.is_file():
         summary["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
     return summary
+
+
+def copy_artifact(path_text: str, cwd: Path, submission_dir: Path) -> dict[str, Any]:
+    source, logical_path, stored_path = safe_artifact_rel(path_text, cwd)
+    summary = summarize_artifact(path_text, cwd)
+    if not source.exists() or not source.is_file():
+        return summary
+    destination = submission_dir / stored_path
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, destination)
+    summary["path"] = logical_path
+    summary["stored_path"] = stored_path
+    summary["size_bytes"] = destination.stat().st_size
+    summary["sha256"] = hashlib.sha256(destination.read_bytes()).hexdigest()
+    return summary
+
+
+def missing_required_artifacts(task: dict[str, Any], artifacts: list[dict[str, Any]]) -> list[str]:
+    provided = {artifact.get("path") for artifact in artifacts if artifact.get("exists")}
+    return [
+        artifact["path"]
+        for artifact in task.get("artifacts", [])
+        if artifact.get("required") and artifact.get("path") not in provided
+    ]
 
 
 def safe_id(value: str) -> str:
@@ -384,7 +432,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 
 def create_pr(root: Path, submission_path: Path, submission_id: str, task_id: str) -> None:
     branch = f"submission/{safe_id(submission_id)}"
-    relative = submission_path.relative_to(root)
+    relative = submission_path.parent.relative_to(root)
     subprocess.run(["git", "switch", "-c", branch], cwd=root, check=True)
     subprocess.run(["git", "add", str(relative)], cwd=root, check=True)
     subprocess.run(["git", "commit", "-m", f"Add arena submission {submission_id}"], cwd=root, check=True)
@@ -423,11 +471,33 @@ def cmd_submit(args: argparse.Namespace) -> int:
     parsed_metrics = parsed["metrics"]
     models = parsed_metrics.get("models") or []
     cost, pricing = estimate_cost(parsed_metrics["tokens"])
-    artifacts = [summarize_artifact(item, Path.cwd()) for item in args.artifact]
     security_findings = scan_value({"events": parsed["events"], "notes": args.notes})
     chat_id = session.get("chat_id") or "no-chat"
     created = utc_now()
     submission_id = safe_id(f"{task['task_id']}-{chat_id}-{created.replace(':', '').replace('-', '')}")
+    submission_dir = root / "submissions" / submission_id
+    artifacts = [summarize_artifact(item, Path.cwd()) for item in args.artifact]
+    missing = missing_required_artifacts(task, artifacts)
+    if missing:
+        print("missing required artifacts:", file=sys.stderr)
+        for item in missing:
+            print(f"- {item}", file=sys.stderr)
+        return 1
+    if args.dry_run:
+        print(f"dry-run submission_id={submission_id}")
+        print(f"would write {submission_dir / 'submission.json'}")
+        for artifact in artifacts:
+            print(f"would include {artifact.get('path')} -> {artifact.get('stored_path')}")
+        print(f"security_findings={len(security_findings)}")
+        return 0
+    if not args.no_pr and os.environ.get("ARENA_NO_PR") != "1" and not args.ack_public_data:
+        print(
+            "Refusing to open PR without --ack-public-data. Public repos expose submission JSON, artifact files, "
+            "metrics, paths, hashes, notes, and redacted transcript snippets.",
+            file=sys.stderr,
+        )
+        return 1
+    artifacts = [copy_artifact(item, Path.cwd(), submission_dir) for item in args.artifact]
     submission = {
         "schema_version": SUBMISSION_SCHEMA_VERSION,
         "submission_id": submission_id,
@@ -479,7 +549,7 @@ def cmd_submit(args: argparse.Namespace) -> int:
             "events": parsed["events"],
         },
     }
-    submission_path = root / "submissions" / f"{submission_id}.json"
+    submission_path = submission_dir / "submission.json"
     write_json(submission_path, submission)
     print(f"wrote {submission_path}")
     if args.no_pr or os.environ.get("ARENA_NO_PR") == "1":
@@ -500,6 +570,8 @@ def build_parser() -> argparse.ArgumentParser:
     submit = sub.add_parser("submit")
     submit.add_argument("--artifact", action="append", default=[], help="Artifact path to include in submission")
     submit.add_argument("--notes", default="", help="Self-review notes")
+    submit.add_argument("--dry-run", action="store_true", help="Validate and preview submission without writing files")
+    submit.add_argument("--ack-public-data", action="store_true", help="Acknowledge public PR submission data and artifact files")
     submit.add_argument("--no-pr", action="store_true", help="Write submission JSON but do not create a GitHub PR")
     submit.set_defaults(func=cmd_submit)
     return parser

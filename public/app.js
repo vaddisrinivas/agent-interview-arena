@@ -123,11 +123,11 @@ function renderOverview() {
         <div class="hero-visual" aria-label="Arena product preview">
           <div class="visual-top">
             <span></span><span></span><span></span>
-            <strong>operator-attempt.v0</strong>
+            <strong>operator-attempt.v2</strong>
           </div>
           <div class="visual-grid">
             <div class="score-dial">
-              <span>${submissionCount ? "LIVE" : "V0"}</span>
+              <span>${submissionCount ? "LIVE" : "V2"}</span>
               <strong>${submissionCount ? Math.min(99, 70 + submissionCount) : 92}</strong>
               <small>task completion score</small>
             </div>
@@ -151,19 +151,19 @@ function renderOverview() {
         <article>
           <span class="feature-kicker">Plugin Run</span>
           <h3>Codex and Claude are the interview rooms.</h3>
-          <p>The plugin captures the operator attempt: session id, redacted transcript snippets, model, wall time, prompts, tools, tokens, and system metrics.</p>
+          <p>The plugin captures the operator attempt: session id, redacted transcript snippets, model, wall time, prompts, tools, tokens, system metrics, and artifact files.</p>
         </article>
         <article>
           <span class="feature-kicker">PR Eval</span>
           <h3>Secretless evaluation on every submission PR.</h3>
-          <p>GitHub Actions validates schemas, checks artifacts, scans redactions, computes scores, and rebuilds dashboard indexes.</p>
+          <p>GitHub Actions validates schemas, checks artifacts, runs trusted task validators, scans redactions, computes scores, and rebuilds dashboard indexes.</p>
         </article>
       </div>
 
       <div class="disclosure-panel">
         <span class="feature-kicker">Data Sharing</span>
         <strong>Submissions are public when this repo is public.</strong>
-        <p>PRs can include metrics, artifact paths, hashes, notes, and redacted transcript snippets. Redaction is best-effort. Review every PR diff before publishing sensitive work.</p>
+        <p>PRs can include metrics, artifact files, paths, hashes, notes, and redacted transcript snippets. Redaction is best-effort. Review every PR diff before publishing sensitive work.</p>
       </div>
 
       <div class="challenge-strip">
@@ -346,7 +346,7 @@ function openTryDialog(task) {
   const pluginRoot = "agent-interview-arena/plugin";
   const codexInstall = `cd /path/to/agent-interview-arena\ncodex plugin marketplace add "$(pwd)"\ncodex plugin add arena@agent-interview-arena\n${start}`;
   const claudeInstall = `cd /path/to/agent-interview-arena\nclaude plugin validate plugin\nclaude --plugin-dir "$(pwd)/plugin"\n${start}`;
-  const cliFallback = `cd /path/to/agent-interview-arena\npython3 plugin/scripts/arena.py start ${task.task_id}\npython3 plugin/scripts/arena.py submit --artifact <path> --notes "Done"`;
+  const cliFallback = `cd /path/to/agent-interview-arena\npython3 plugin/scripts/arena.py start ${task.task_id}\npython3 plugin/scripts/arena.py submit --dry-run --artifact <path>\npython3 plugin/scripts/arena.py submit --ack-public-data --artifact <path> --notes "Done"`;
   tryTitle.textContent = "Try challenge";
   trySubtitle.textContent = task.title;
   tryContent.innerHTML = `
@@ -372,9 +372,9 @@ function openTryDialog(task) {
     </div>
     <div class="try-disclosure">
       <strong>Data sharing note</strong>
-      <p>Submission PRs can publish metrics, notes, artifact paths, hashes, and redacted transcript snippets. Review the PR diff before sharing anything sensitive.</p>
+      <p>Submission PRs can publish metrics, notes, artifact files, paths, hashes, and redacted transcript snippets. Review the PR diff before sharing anything sensitive.</p>
     </div>
-    <p class="muted">Plugin root: <code>${escapeHtml(pluginRoot)}</code>. Submissions open GitHub PRs with one JSON file.</p>
+    <p class="muted">Plugin root: <code>${escapeHtml(pluginRoot)}</code>. Submissions open GitHub PRs with one folder package.</p>
   `;
   tryContent.querySelectorAll("[data-copy]").forEach((button) => {
     button.addEventListener("click", async (event) => {
@@ -411,9 +411,9 @@ function renderSubmissions() {
       </div>
       <div class="table-wrap">
         <table class="submission-table">
-          <thead><tr><th>Submission</th><th>Task</th><th>Model</th><th>Score</th><th>Time</th><th>Tokens</th><th>Cost</th><th>Security</th></tr></thead>
+          <thead><tr><th>Submission</th><th>Task</th><th>Model</th><th>Score</th><th>Validator</th><th>Time</th><th>Tokens</th><th>Cost</th><th>Security</th></tr></thead>
           <tbody>
-            ${filteredSubmissions().map(renderSubmissionRow).join("") || `<tr><td colspan="8">No submissions yet.</td></tr>`}
+            ${filteredSubmissions().map(renderSubmissionRow).join("") || `<tr><td colspan="9">No submissions yet.</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -429,6 +429,13 @@ function renderSubmissions() {
   });
 }
 
+function validatorPill(submission) {
+  const result = submission.evaluation_result?.validator_result;
+  if (!result || result.skipped) return `<span class="pill warn">skipped</span>`;
+  if (result.passed) return `<span class="pill good">passed ${Math.round(Number(result.score || 0) * 100)}</span>`;
+  return `<span class="pill bad">failed ${Math.round(Number(result.score || 0) * 100)}</span>`;
+}
+
 function renderSubmissionRow(submission) {
   const score = submission.evaluation_result?.deterministic_score ?? "n/a";
   const tokens = submission.metrics?.tokens?.total ?? 0;
@@ -439,6 +446,7 @@ function renderSubmissionRow(submission) {
       <td>${escapeHtml(submission.task_id)}</td>
       <td>${escapeHtml(submission.agent?.model || "unknown")}</td>
       <td>${escapeHtml(score)}</td>
+      <td>${validatorPill(submission)}</td>
       <td>${escapeHtml(submission.metrics?.wall_time_seconds ?? 0)}s</td>
       <td>${escapeHtml(tokens)}</td>
       <td>$${Number(submission.metrics?.cost_usd_estimate || 0).toFixed(4)}</td>
@@ -497,7 +505,7 @@ function renderLeaderboard() {
       ${rows.length ? `
         <div class="table-wrap leaderboard-table-wrap">
           <table class="leader-table">
-            <thead><tr><th>Rank</th><th>Submission</th><th>Task</th><th>Score</th><th>Model</th><th>Tokens</th><th>Cost</th><th>Tool Calls</th></tr></thead>
+            <thead><tr><th>Rank</th><th>Submission</th><th>Task</th><th>Score</th><th>Validator</th><th>Model</th><th>Tokens</th><th>Cost</th><th>Tool Calls</th></tr></thead>
             <tbody>
               ${rows.map((submission, index) => `
                 <tr>
@@ -505,6 +513,7 @@ function renderLeaderboard() {
                   <td><code>${escapeHtml(submission.submission_id)}</code></td>
                   <td>${escapeHtml(submission.task_id)}</td>
                   <td><strong>${escapeHtml(submission.evaluation_result?.deterministic_score ?? "n/a")}</strong></td>
+                  <td>${validatorPill(submission)}</td>
                   <td>${escapeHtml(submission.agent?.model || "unknown")}</td>
                   <td>${escapeHtml(submission.metrics?.tokens?.total ?? 0)}</td>
                   <td>$${Number(submission.metrics?.cost_usd_estimate || 0).toFixed(4)}</td>

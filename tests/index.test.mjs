@@ -8,7 +8,7 @@ import { buildIndexes, readJson } from "../scripts/arena-core.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-test("builds dashboard indexes from tasks and submissions", () => {
+test("builds dashboard indexes from tasks and submissions", async () => {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), "arena-index-"));
   fs.mkdirSync(path.join(temp, "public/data"), { recursive: true });
   fs.cpSync(path.join(root, "tasks"), path.join(temp, "tasks"), { recursive: true });
@@ -17,7 +17,7 @@ test("builds dashboard indexes from tasks and submissions", () => {
     path.join(root, "tests/fixtures/sample-submission.json"),
     path.join(temp, "submissions/sample-submission.json")
   );
-  const result = buildIndexes(temp);
+  const result = await buildIndexes(temp);
   assert.equal(result.problems.length, 0);
   const taskIndex = readJson(path.join(temp, "public/data/tasks.json"));
   const submissionIndex = readJson(path.join(temp, "public/data/submissions.json"));

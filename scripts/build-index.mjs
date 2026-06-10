@@ -2,7 +2,7 @@
 import { buildIndexes, repoRootFromMeta } from "./arena-core.mjs";
 
 const root = process.env.ARENA_REPO || repoRootFromMeta(import.meta.url);
-const result = buildIndexes(root);
+const result = await buildIndexes(root);
 
 console.log(`tasks=${result.taskCount} submissions=${result.submissionCount} problems=${result.problems.length}`);
 if (result.problems.length) {
