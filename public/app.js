@@ -163,7 +163,7 @@ function renderOverview() {
       <div class="disclosure-panel">
         <span class="feature-kicker">Data Sharing</span>
         <strong>Submissions are public when this repo is public.</strong>
-        <p>PRs can include metrics, artifact files, paths, hashes, notes, and redacted transcript snippets. Redaction is best-effort. Review every PR diff before publishing sensitive work.</p>
+        <p>PRs can include public artifact files copied into submission folders, metrics, paths, hashes, notes, and redacted transcript snippets. Redaction is best-effort. Review every PR diff before publishing sensitive work.</p>
       </div>
 
       <div class="challenge-strip">
@@ -372,9 +372,9 @@ function openTryDialog(task) {
     </div>
     <div class="try-disclosure">
       <strong>Data sharing note</strong>
-      <p>Submission PRs can publish metrics, notes, artifact files, paths, hashes, and redacted transcript snippets. Review the PR diff before sharing anything sensitive.</p>
+      <p>Submission PRs can publish metrics, notes, artifact files, paths, hashes, and redacted transcript snippets. Artifact files copied under <code>submissions/&lt;id&gt;/artifacts/</code> are public in public repos. Review the PR diff before sharing anything sensitive.</p>
     </div>
-    <p class="muted">Plugin root: <code>${escapeHtml(pluginRoot)}</code>. Submissions open GitHub PRs with one folder package.</p>
+    <p class="muted">Plugin root: <code>${escapeHtml(pluginRoot)}</code>. Use <code>&lt;path&gt;</code> only for artifact files that can be public. Submissions open GitHub PRs with one folder package, including copied public artifact files.</p>
   `;
   tryContent.querySelectorAll("[data-copy]").forEach((button) => {
     button.addEventListener("click", async (event) => {
@@ -391,7 +391,11 @@ function openTryDialog(task) {
 function filteredSubmissions() {
   const query = state.submissionSearch.toLowerCase();
   return state.submissions.filter((submission) => {
-    const haystack = `${submission.submission_id} ${submission.task_id} ${submission.agent?.model || ""} ${submission.agent?.host || ""}`.toLowerCase();
+    const artifactText = (submission.artifacts || [])
+      .map((artifact) => `${artifact.path || ""} ${artifact.stored_path || ""} ${artifact.media_type || ""} ${artifact.sha256 || ""}`)
+      .join(" ");
+    const failedChecks = failedValidatorChecks(submission).join(" ");
+    const haystack = `${submission.submission_id} ${submission.task_id} ${submission.agent?.model || ""} ${submission.agent?.host || ""} ${artifactText} ${failedChecks}`.toLowerCase();
     const taskOk = !state.submissionTask || submission.task_id === state.submissionTask;
     return taskOk && haystack.includes(query);
   });
@@ -411,9 +415,9 @@ function renderSubmissions() {
       </div>
       <div class="table-wrap">
         <table class="submission-table">
-          <thead><tr><th>Submission</th><th>Task</th><th>Model</th><th>Score</th><th>Validator</th><th>Time</th><th>Tokens</th><th>Cost</th><th>Security</th></tr></thead>
+          <thead><tr><th>Submission</th><th>Task</th><th>Artifacts</th><th>Model</th><th>Score</th><th>Validator</th><th>Time</th><th>Tokens</th><th>Cost</th><th>Security</th></tr></thead>
           <tbody>
-            ${filteredSubmissions().map(renderSubmissionRow).join("") || `<tr><td colspan="9">No submissions yet.</td></tr>`}
+            ${filteredSubmissions().map(renderSubmissionRow).join("") || `<tr><td colspan="10">No submissions yet.</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -436,6 +440,61 @@ function validatorPill(submission) {
   return `<span class="pill bad">failed ${Math.round(Number(result.score || 0) * 100)}</span>`;
 }
 
+function failedValidatorChecks(submission) {
+  const result = submission.evaluation_result?.validator_result;
+  if (!result || result.skipped || result.passed) return [];
+  const failed = (result.checks || [])
+    .filter((check) => !check.passed)
+    .map((check) => `${check.id || "check"}: ${check.message || check.id || "failed"}`)
+    .filter(Boolean);
+  if (!failed.length && result.message) failed.push(result.message);
+  return failed;
+}
+
+function validatorCell(submission) {
+  const result = submission.evaluation_result?.validator_result;
+  const messages = failedValidatorChecks(submission);
+  return `
+    <div class="validator-cell">
+      ${validatorPill(submission)}
+      ${result?.id ? `<div class="validator-id">${escapeHtml(result.id)}</div>` : ""}
+      ${messages.length ? `
+        <ul class="validator-messages">
+          ${messages.slice(0, 3).map((message) => `<li>${escapeHtml(message)}</li>`).join("")}
+          ${messages.length > 3 ? `<li>${messages.length - 3} more failed checks</li>` : ""}
+        </ul>
+      ` : ""}
+    </div>
+  `;
+}
+
+function formatBytes(value) {
+  const bytes = Number(value || 0);
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function artifactMetadata(submission, limit = 3) {
+  const artifacts = submission.artifacts || [];
+  if (!artifacts.length) return `<span class="muted">No artifacts</span>`;
+  const visible = artifacts.slice(0, limit);
+  return `
+    <div class="artifact-meta">
+      ${visible.map((artifact) => `
+        <div class="artifact-meta-row ${artifact.exists === false ? "is-missing" : ""}">
+          <code>${escapeHtml(artifact.path || artifact.artifact_id || "artifact")}</code>
+          <span>${escapeHtml(formatBytes(artifact.size_bytes))}</span>
+          <span>${escapeHtml(artifact.media_type || "unknown")}</span>
+          <span>${escapeHtml(artifact.stored_path || "not copied")}</span>
+          <span>${artifact.sha256 ? `sha ${escapeHtml(String(artifact.sha256).slice(0, 10))}` : "sha none"}</span>
+        </div>
+      `).join("")}
+      ${artifacts.length > visible.length ? `<div class="artifact-meta-more">${artifacts.length - visible.length} more artifacts</div>` : ""}
+    </div>
+  `;
+}
+
 function renderSubmissionRow(submission) {
   const score = submission.evaluation_result?.deterministic_score ?? "n/a";
   const tokens = submission.metrics?.tokens?.total ?? 0;
@@ -444,9 +503,10 @@ function renderSubmissionRow(submission) {
     <tr>
       <td><code>${escapeHtml(submission.submission_id)}</code><div class="muted">${escapeHtml(submission.created_at)}</div></td>
       <td>${escapeHtml(submission.task_id)}</td>
+      <td>${artifactMetadata(submission)}</td>
       <td>${escapeHtml(submission.agent?.model || "unknown")}</td>
       <td>${escapeHtml(score)}</td>
-      <td>${validatorPill(submission)}</td>
+      <td>${validatorCell(submission)}</td>
       <td>${escapeHtml(submission.metrics?.wall_time_seconds ?? 0)}s</td>
       <td>${escapeHtml(tokens)}</td>
       <td>$${Number(submission.metrics?.cost_usd_estimate || 0).toFixed(4)}</td>
@@ -505,7 +565,7 @@ function renderLeaderboard() {
       ${rows.length ? `
         <div class="table-wrap leaderboard-table-wrap">
           <table class="leader-table">
-            <thead><tr><th>Rank</th><th>Submission</th><th>Task</th><th>Score</th><th>Validator</th><th>Model</th><th>Tokens</th><th>Cost</th><th>Tool Calls</th></tr></thead>
+            <thead><tr><th>Rank</th><th>Submission</th><th>Task</th><th>Score</th><th>Validator</th><th>Artifacts</th><th>Model</th><th>Tokens</th><th>Cost</th><th>Tool Calls</th></tr></thead>
             <tbody>
               ${rows.map((submission, index) => `
                 <tr>
@@ -513,7 +573,8 @@ function renderLeaderboard() {
                   <td><code>${escapeHtml(submission.submission_id)}</code></td>
                   <td>${escapeHtml(submission.task_id)}</td>
                   <td><strong>${escapeHtml(submission.evaluation_result?.deterministic_score ?? "n/a")}</strong></td>
-                  <td>${validatorPill(submission)}</td>
+                  <td>${validatorCell(submission)}</td>
+                  <td>${artifactMetadata(submission, 2)}</td>
                   <td>${escapeHtml(submission.agent?.model || "unknown")}</td>
                   <td>${escapeHtml(submission.metrics?.tokens?.total ?? 0)}</td>
                   <td>$${Number(submission.metrics?.cost_usd_estimate || 0).toFixed(4)}</td>

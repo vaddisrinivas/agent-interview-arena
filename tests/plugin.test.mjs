@@ -37,11 +37,28 @@ function start(temp) {
 test("submit --dry-run writes nothing", () => {
   const temp = setupRepo();
   start(temp);
-  execFileSync(
+  const output = execFileSync(
     "python3",
     [plugin, "submit", "--dry-run", "--artifact", "csv-json-tool/output.json", "--artifact", "csv-json-tool/README.md"],
-    { cwd: path.join(temp, "work"), env: env(temp) }
+    { cwd: path.join(temp, "work"), env: env(temp), encoding: "utf8" }
   );
+  assert.match(output, /dry-run submission_id=/);
+  assert.match(output, /csv-json-tool\/output\.json -> artifacts\/csv-json-tool\/output\.json/);
+  assert.match(output, /(public-data warning|security_findings=0)/);
+  assert.deepEqual(fs.readdirSync(path.join(temp, "submissions")), []);
+});
+
+test("submit --dry-run does not require public ack", () => {
+  const temp = setupRepo();
+  start(temp);
+  const result = spawnSync(
+    "python3",
+    [plugin, "submit", "--dry-run", "--artifact", "csv-json-tool/output.json", "--artifact", "csv-json-tool/README.md"],
+    { cwd: path.join(temp, "work"), env: env(temp), encoding: "utf8" }
+  );
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /dry-run submission_id=/);
+  assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /Refusing to open PR/);
   assert.deepEqual(fs.readdirSync(path.join(temp, "submissions")), []);
 });
 
@@ -69,6 +86,22 @@ test("submit --no-pr writes folder package and copies artifacts", () => {
   assert.equal(fs.existsSync(path.join(temp, "submissions", dirs[0], "artifacts/csv-json-tool/output.json")), true);
 });
 
+test("submit --no-pr stays local without public ack", () => {
+  const temp = setupRepo();
+  start(temp);
+  const result = spawnSync(
+    "python3",
+    [plugin, "submit", "--no-pr", "--artifact", "csv-json-tool/output.json", "--artifact", "csv-json-tool/README.md"],
+    { cwd: path.join(temp, "work"), env: env(temp), encoding: "utf8" }
+  );
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /skipped PR/);
+  assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /Refusing to open PR/);
+  const dirs = fs.readdirSync(path.join(temp, "submissions"));
+  assert.equal(dirs.length, 1);
+  assert.equal(fs.existsSync(path.join(temp, "submissions", dirs[0], "artifacts/csv-json-tool/README.md")), true);
+});
+
 test("submit without ack refuses PR path before writing", () => {
   const temp = setupRepo();
   start(temp);
@@ -79,6 +112,8 @@ test("submit without ack refuses PR path before writing", () => {
   );
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /--ack-public-data/);
+  assert.match(result.stderr, /Public repos expose submission JSON, (public )?artifact files/);
+  assert.match(result.stderr, /metrics, paths, hashes, notes, and redacted transcript snippets/);
   assert.deepEqual(fs.readdirSync(path.join(temp, "submissions")), []);
 });
 

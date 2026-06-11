@@ -379,6 +379,44 @@ def missing_required_artifacts(task: dict[str, Any], artifacts: list[dict[str, A
     ]
 
 
+def print_dry_run_preview(
+    submission_id: str,
+    submission_dir: Path,
+    artifacts: list[dict[str, Any]],
+    missing: list[str],
+    security_findings: list[dict[str, Any]],
+) -> None:
+    submission_file = submission_dir / "submission.json"
+    print("Arena submit dry-run preview")
+    print(f"dry-run submission_id={submission_id}")
+    print(f"expected submission file: {submission_file}")
+    print(f"would write {submission_file}")
+    print(
+        "public-data warning: submission PRs may publish submission JSON, public artifact files copied under "
+        "submissions/<id>/artifacts/, metrics, notes, paths, hashes, and redacted transcript snippets."
+    )
+    print(f"security finding count: {len(security_findings)}")
+    print(f"security_findings={len(security_findings)}")
+    print("artifact copy plan:")
+    if artifacts:
+        for artifact in artifacts:
+            status = "copy" if artifact.get("exists") else "missing"
+            sha = artifact.get("sha256") or "none"
+            print(f"would include {artifact.get('path')} -> {artifact.get('stored_path')}")
+            print(
+                f"- {status}: {artifact.get('path')} -> {artifact.get('stored_path')} "
+                f"size_bytes={artifact.get('size_bytes', 0)} media_type={artifact.get('media_type')} sha256={sha}"
+            )
+    else:
+        print("- none")
+    print("missing required artifacts:")
+    if missing:
+        for item in missing:
+            print(f"- {item}")
+    else:
+        print("- none")
+
+
 def safe_id(value: str) -> str:
     value = re.sub(r"[^A-Za-z0-9_.-]+", "-", value).strip("-")
     return value[:90] or "submission"
@@ -447,7 +485,7 @@ def create_pr(root: Path, submission_path: Path, submission_id: str, task_id: st
             "--body",
             (
                 f"Agent Interview Arena submission `{submission_id}` for task `{task_id}`.\n\n"
-                "Data sharing note: this PR may include metrics, notes, artifact paths, hashes, and redacted transcript snippets. "
+                "Data sharing note: this PR may include public artifact files, metrics, notes, artifact paths, hashes, and redacted transcript snippets. "
                 "Redaction is best-effort. Review the diff before publishing sensitive work."
             ),
         ],
@@ -478,22 +516,19 @@ def cmd_submit(args: argparse.Namespace) -> int:
     submission_dir = root / "submissions" / submission_id
     artifacts = [summarize_artifact(item, Path.cwd()) for item in args.artifact]
     missing = missing_required_artifacts(task, artifacts)
+    if args.dry_run:
+        print_dry_run_preview(submission_id, submission_dir, artifacts, missing, security_findings)
+        return 1 if missing else 0
     if missing:
         print("missing required artifacts:", file=sys.stderr)
         for item in missing:
             print(f"- {item}", file=sys.stderr)
         return 1
-    if args.dry_run:
-        print(f"dry-run submission_id={submission_id}")
-        print(f"would write {submission_dir / 'submission.json'}")
-        for artifact in artifacts:
-            print(f"would include {artifact.get('path')} -> {artifact.get('stored_path')}")
-        print(f"security_findings={len(security_findings)}")
-        return 0
     if not args.no_pr and os.environ.get("ARENA_NO_PR") != "1" and not args.ack_public_data:
         print(
             "Refusing to open PR without --ack-public-data. Public repos expose submission JSON, artifact files, "
-            "metrics, paths, hashes, notes, and redacted transcript snippets.",
+            "metrics, paths, hashes, notes, and redacted transcript snippets. Artifact files copied into submission "
+            "folders are public in public repos.",
             file=sys.stderr,
         )
         return 1
@@ -571,7 +606,7 @@ def build_parser() -> argparse.ArgumentParser:
     submit.add_argument("--artifact", action="append", default=[], help="Artifact path to include in submission")
     submit.add_argument("--notes", default="", help="Self-review notes")
     submit.add_argument("--dry-run", action="store_true", help="Validate and preview submission without writing files")
-    submit.add_argument("--ack-public-data", action="store_true", help="Acknowledge public PR submission data and artifact files")
+    submit.add_argument("--ack-public-data", action="store_true", help="Acknowledge public PR submission data and public artifact files")
     submit.add_argument("--no-pr", action="store_true", help="Write submission JSON but do not create a GitHub PR")
     submit.set_defaults(func=cmd_submit)
     return parser

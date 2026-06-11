@@ -632,6 +632,63 @@ a.secondary:hover {
   border-color: #ffc9c9;
 }
 
+.validator-cell {
+  display: grid;
+  gap: 7px;
+  max-width: 320px;
+}
+
+.validator-messages {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 17px;
+  color: #7a271a;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.validator-id {
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.artifact-meta {
+  display: grid;
+  gap: 6px;
+  min-width: 260px;
+  max-width: 460px;
+}
+
+.artifact-meta-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) auto auto minmax(120px, 1fr) auto;
+  gap: 7px;
+  align-items: start;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.artifact-meta-row code {
+  color: #1d2939;
+  overflow-wrap: anywhere;
+}
+
+.artifact-meta-row span {
+  overflow-wrap: anywhere;
+}
+
+.artifact-meta-row.is-missing {
+  color: var(--danger);
+}
+
+.artifact-meta-more {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .detail-head,
 .section,
 .interviewer-head,

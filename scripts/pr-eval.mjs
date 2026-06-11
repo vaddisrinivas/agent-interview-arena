@@ -22,7 +22,7 @@ console.log(`- Tasks: ${build.taskCount}`);
 console.log(`- Submissions: ${build.submissionCount}`);
 console.log(`- Problems: ${uniqueProblems.length}`);
 console.log("");
-console.log("> Data sharing: submission PRs may expose metrics, notes, artifact paths, hashes, and redacted transcript snippets. Redaction is best-effort; review diffs before publishing sensitive work.");
+console.log("> Data sharing: submission PRs may expose public artifact files copied under submissions/<id>/artifacts/, metrics, notes, artifact paths, hashes, and redacted transcript snippets. Redaction is best-effort; review diffs before publishing sensitive work.");
 console.log("");
 
 if (uniqueProblems.length) {
